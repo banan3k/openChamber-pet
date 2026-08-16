@@ -1,0 +1,6 @@
+{
+  "name": "openchamber-pet-app",
+  "version": "1.0.0",
+  "main": "main.js",
+  "private": true
+}

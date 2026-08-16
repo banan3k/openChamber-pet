@@ -1,0 +1,22 @@
+{
+  "name": "openchamber-pet",
+  "version": "1.0.0",
+  "description": "An OpenChamber/opencode plugin that shows an always-on-top floating pet mascot that reacts to the agent's state.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron pet-app/main.js"
+  },
+  "keywords": [
+    "opencode",
+    "openchamber",
+    "plugin",
+    "pet",
+    "mascot",
+    "electron"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
