@@ -2,8 +2,6 @@
 
 An [OpenChamber](https://opencode.ai) / opencode plugin that shows a small, always-on-top pet mascot that reacts to the agent's state. While a session is working the pet animates and shows speech bubbles with the task title and a live status icon.
 
-![pet](.openchamber/screenshots/pet-idle-2026-08-16T09-50-10-322.jpg)
-
 ## Features
 
 - Always-on-top, transparent, frameless pet window that lives in the corner of your screen.
