@@ -35,19 +35,6 @@ let tasks = []
 let frameIndex = 0
 let frameElapsed = 0
 let lastTs = 0
-let animOverrides = {}
-
-function animFor(name) {
-  const base = ANIMATIONS[name] || ANIMATIONS.idle
-  const override = animOverrides[name]
-  return override ? { ...base, ...override } : base
-}
-
-function applyAnimations(animations) {
-  animOverrides = animations && typeof animations === "object" ? animations : {}
-  frameIndex = 0
-  frameElapsed = 0
-}
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
 const sprites = new Map()
@@ -121,7 +108,7 @@ function draw() {
   ctx.clearRect(0, 0, WIDTH, HEIGHT)
   if (!img || !img.complete || !img.naturalWidth) return
 
-  const anim = animFor(state)
+  const anim = ANIMATIONS[state] || ANIMATIONS.idle
   const col = frameIndex % anim.frames
   const row = anim.row
   ctx.imageSmoothingEnabled = true
@@ -133,7 +120,7 @@ function tick(ts) {
   const dt = ts - lastTs
   lastTs = ts
 
-  const anim = animFor(state)
+  const anim = ANIMATIONS[state] || ANIMATIONS.idle
   if (!reducedMotion) {
     frameElapsed += dt
     const duration = anim.durations[frameIndex % anim.frames] || 150
@@ -156,7 +143,6 @@ function connectSse() {
       const msg = JSON.parse(event.data)
       if (msg.state) setState(msg.state)
       if (msg.petId) setPet(msg.petId)
-      if (msg.animations) applyAnimations(msg.animations)
       if (msg.tasks) setTasks(msg.tasks)
     } catch {}
   }
@@ -170,7 +156,6 @@ async function init() {
     petId = stateData.petId
     state = stateData.state || "idle"
     setTasks(stateData.tasks || [])
-    applyAnimations(stateData.animations)
     await loadSprite(petId)
   } catch {}
   connectSse()
