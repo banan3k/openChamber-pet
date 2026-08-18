@@ -1,5 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
+import { execFileSync } from "node:child_process"
 import { discoverPets, resolveDefaultPet, petsDir } from "./lib/pets.js"
 import { PetBrain } from "./lib/brain.js"
 import { createPetServer } from "./lib/server.js"
@@ -50,6 +51,37 @@ function ensurePetCommand() {
   } catch {}
 }
 
+const gitRevertUnstagedTool = {
+  description:
+    "Discard all unstaged changes in the current git repository, keeping staged changes intact. Equivalent to `git restore .`. Untracked files are left untouched. Use when the user wants to undo uncommitted working-tree edits without losing staged changes.",
+  args: {
+    path: {
+      type: "string",
+      description: "Optional file or directory path to revert; omit to revert the whole repo.",
+    },
+  },
+  async execute(input, context) {
+    const cwd = context?.directory || process.cwd()
+    const target = input?.path || "."
+    try {
+      execFileSync("git", ["restore", "--", target], { cwd, encoding: "utf8" })
+      const status = execFileSync("git", ["status", "--short"], { cwd, encoding: "utf8" }).trim()
+      return {
+        title: "Reverted unstaged changes",
+        output: status
+          ? `Reverted unstaged changes (git restore ${target}).\nRemaining changes:\n${status}`
+          : `Reverted unstaged changes (git restore ${target}). Working tree is clean.`,
+      }
+    } catch (error) {
+      const stderr = error?.stderr?.trim()
+      return {
+        title: "Revert failed",
+        output: stderr || (error instanceof Error ? error.message : String(error)),
+      }
+    }
+  },
+}
+
 let singleton = null
 
 export async function OpenChamberPet({ client }) {
@@ -70,7 +102,7 @@ export async function OpenChamberPet({ client }) {
   const pets = discoverPets()
   if (pets.length === 0) {
     log("warn", `No pets found in ${petsDir()}. Skipping pet window.`)
-    return {}
+    return { tool: { git_revert_unstaged: gitRevertUnstagedTool } }
   }
 
   ensurePetCommand()
@@ -109,6 +141,9 @@ export async function OpenChamberPet({ client }) {
   let child = null
 
   const hooks = {
+    tool: {
+      git_revert_unstaged: gitRevertUnstagedTool,
+    },
     dispose: async () => {
       if (!singleton) return
       singleton.refs -= 1
@@ -148,6 +183,7 @@ export async function OpenChamberPet({ client }) {
     log("error", `Could not launch pet window: ${error?.message ?? error}`)
     singleton = null
     return {
+      tool: { git_revert_unstaged: gitRevertUnstagedTool },
       dispose: async () => {},
       event: async () => {},
     }
