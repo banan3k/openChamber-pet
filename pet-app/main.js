@@ -186,7 +186,6 @@ function createWindow() {
   })
 
   win.setAlwaysOnTop(true, "floating")
-  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   win.loadURL(serverUrl)
 
   win.webContents.on("context-menu", () => {
