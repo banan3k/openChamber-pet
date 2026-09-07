@@ -10,6 +10,7 @@ An [OpenChamber](https://opencode.ai) / opencode plugin that shows a small, alwa
   - spinner — working
   - `?` — waiting for a permission/question answer
   - `✓` — finished
+- Subagent session bubbles include a `SUB` badge.
 - Multiple pets: right-click the pet to switch between the pets in `pets/`.
 - Hide/show the pet via a `/pet` command or a global shortcut.
 - Closes automatically with OpenChamber (no orphaned windows).

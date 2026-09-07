@@ -81,11 +81,21 @@ function renderBubbles() {
     text.className = "bubble-text"
     text.textContent = task.title || "Working…"
 
+    if (task.isSubagent) {
+      const badge = document.createElement("span")
+      badge.className = "bubble-subagent"
+      badge.textContent = "SUB"
+      badge.title = "Subagent task"
+      bubble.appendChild(badge)
+    }
+
     const icon = document.createElement("span")
     icon.className = `bubble-icon bubble-icon--${task.status || "working"}`
 
     bubble.append(text, icon)
-    bubble.title = task.title || task.id
+    bubble.title = task.isSubagent
+      ? `${task.title || task.id} (subagent task)`
+      : task.title || task.id
     bubblesEl.appendChild(bubble)
   }
 }
