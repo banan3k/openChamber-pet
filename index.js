@@ -119,6 +119,7 @@ export async function OpenChamberPet({ client }) {
   const brain = new PetBrain({
     onState: (state) => server.setState(state),
     onTasks: (tasks) => server.setTasks(tasks),
+    onTodos: (todos) => server.setTodos(todos),
     resolveSession: async (sessionID) => {
       try {
         const res = await client?.session?.get?.({ path: { id: sessionID } })

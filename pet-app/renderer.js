@@ -23,6 +23,7 @@ const ANIMATIONS = {
 const canvas = document.getElementById("pet")
 const ctx = canvas.getContext("2d")
 const bubblesEl = document.getElementById("bubbles")
+const todoDotsEl = document.getElementById("todo-dots")
 
 const dpr = window.devicePixelRatio || 1
 canvas.width = WIDTH * dpr
@@ -32,6 +33,7 @@ ctx.scale(dpr, dpr)
 let state = "idle"
 let petId = null
 let tasks = []
+let todos = []
 let frameIndex = 0
 let frameElapsed = 0
 let lastTs = 0
@@ -100,11 +102,30 @@ function renderBubbles() {
   }
 }
 
+function renderTodos() {
+  todoDotsEl.innerHTML = ""
+  for (const todo of todos) {
+    const dot = document.createElement("span")
+    const status = todo.status === "in_progress" ? "in-progress" : "pending"
+    dot.className = `todo-dot todo-dot--${status}`
+    dot.title = `${status === "in-progress" ? "In progress" : "Pending"}: ${todo.content}`
+    todoDotsEl.appendChild(dot)
+  }
+}
+
 function resizeWindow() {
   const count = Math.min(tasks.length, MAX_BUBBLES)
-  const width = count > 0 ? BUBBLE_W + 8 : WIDTH
+  const width = count > 0 || todos.length > 0 ? BUBBLE_W + 8 : WIDTH
   const height = HEIGHT + (count > 0 ? count * (BUBBLE_H + BUBBLE_GAP) + BUBBLE_GAP : 0)
   window.petWindow?.resize(width, height)
+}
+
+function setTodos(next) {
+  todos = Array.isArray(next)
+    ? next.filter((todo) => todo?.status === "pending" || todo?.status === "in_progress")
+    : []
+  renderTodos()
+  resizeWindow()
 }
 
 function setTasks(next) {
@@ -154,6 +175,7 @@ function connectSse() {
       if (msg.state) setState(msg.state)
       if (msg.petId) setPet(msg.petId)
       if (msg.tasks) setTasks(msg.tasks)
+      if (msg.todos) setTodos(msg.todos)
     } catch {}
   }
   source.onerror = () => {}
@@ -166,6 +188,7 @@ async function init() {
     petId = stateData.petId
     state = stateData.state || "idle"
     setTasks(stateData.tasks || [])
+    setTodos(stateData.todos || [])
     await loadSprite(petId)
   } catch {}
   connectSse()

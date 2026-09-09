@@ -22,10 +22,52 @@ body {
 }
 
 #pet {
+  position: absolute;
+  right: 0;
+  bottom: 0;
   display: block;
   width: 96px;
   height: 104px;
   -webkit-app-region: drag;
+}
+
+#pet-row {
+  position: relative;
+  flex: none;
+  width: 220px;
+  height: 104px;
+}
+
+#todo-dots {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+  width: 112px;
+  -webkit-app-region: no-drag;
+}
+
+.todo-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: #a78bfa;
+  box-shadow: 0 0 0 2px rgba(30, 30, 34, 0.82), 0 0 7px currentColor;
+}
+
+.todo-dot--pending {
+  color: #a78bfa;
+  background: #a78bfa;
+}
+
+.todo-dot--in-progress {
+  color: #60a5fa;
+  background: #60a5fa;
+  animation: todo-pulse 1.4s ease-in-out infinite;
 }
 
 #bubbles {
@@ -118,5 +160,19 @@ body {
 @keyframes bubble-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes todo-pulse {
+  50% {
+    opacity: 0.55;
+    transform: scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble-icon--working,
+  .todo-dot--in-progress {
+    animation: none;
   }
 }
