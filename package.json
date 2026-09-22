@@ -5,7 +5,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "electron pet-app/main.js"
+    "start": "electron pet-app/main.js",
+    "test": "node --test pet-app/*.test.cjs"
   },
   "keywords": [
     "opencode",

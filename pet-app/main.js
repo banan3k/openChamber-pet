@@ -40,8 +40,7 @@ let win = null
 let currentPetId = null
 let pets = []
 let serverFailures = 0
-let winWidth = WIDTH
-let winHeight = HEIGHT
+let bubbleSide = "left"
 let lastToggleSeq = null
 
 async function pollServer() {
@@ -147,22 +146,38 @@ function toggleWindow() {
 function positionWindow() {
   if (!win) return
   const { workArea } = screen.getPrimaryDisplay()
+  const { width, height } = win.getBounds()
   const margin = 16
-  const x = workArea.x + workArea.width - winWidth - margin
-  const y = workArea.y + workArea.height - winHeight - margin
+  const x = workArea.x + workArea.width - width - margin
+  const y = workArea.y + workArea.height - height - margin
   win.setPosition(Math.round(x), Math.round(y))
 }
 
 function resizeWindow(width, height) {
   if (!win) return
-  winWidth = Math.round(width)
-  winHeight = Math.round(height)
-  win.setSize(winWidth, winHeight)
-  positionWindow()
+  const bounds = win.getBounds()
+  // Anchor the pet itself, not the transparent window around its bubbles.
+  const petX = bounds.x + (bubbleSide === "left" ? bounds.width - WIDTH : 0)
+  const petY = bounds.y + bounds.height - HEIGHT
+  const center = { x: petX + WIDTH / 2, y: petY + HEIGHT / 2 }
+  const { workArea } = screen.getDisplayNearestPoint(center)
+  const nextSide = center.x < workArea.x + workArea.width / 2 ? "right" : "left"
+  const sideChanged = nextSide !== bubbleSide
+  bubbleSide = nextSide
+
+  const nextWidth = Math.round(width)
+  const nextHeight = Math.round(height)
+  const x = petX - (bubbleSide === "left" ? nextWidth - WIDTH : 0)
+  const y = petY + HEIGHT - nextHeight
+  if (x !== bounds.x || y !== bounds.y || nextWidth !== bounds.width || nextHeight !== bounds.height) {
+    win.setBounds({ x, y, width: nextWidth, height: nextHeight })
+  }
+  if (sideChanged) win.webContents.send("pet:bubble-side", bubbleSide)
 }
 
 function createWindow() {
   if (win) return
+  bubbleSide = "left"
   win = new BrowserWindow({
     width: WIDTH,
     height: HEIGHT,
@@ -192,6 +207,12 @@ function createWindow() {
     buildMenu().popup({ window: win })
   })
 
+  // On macOS/Windows, wait for the drag to finish before changing window bounds.
+  win.on(process.platform === "linux" ? "move" : "moved", () => {
+    const { width, height } = win.getBounds()
+    resizeWindow(width, height)
+  })
+
   win.on("closed", () => {
     win = null
   })
@@ -199,6 +220,10 @@ function createWindow() {
 
 ipcMain.on("pet:resize", (_event, { width, height }) => {
   resizeWindow(width, height)
+})
+
+ipcMain.on("pet:layout-ready", () => {
+  win?.webContents.send("pet:bubble-side", bubbleSide)
 })
 
 app.on("second-instance", (_event, argv) => {

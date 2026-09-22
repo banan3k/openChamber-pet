@@ -79,6 +79,22 @@ body {
   -webkit-app-region: no-drag;
 }
 
+body[data-bubble-side="right"] #stage,
+body[data-bubble-side="right"] #bubbles {
+  align-items: flex-start;
+}
+
+body[data-bubble-side="right"] #pet {
+  left: 0;
+  right: auto;
+}
+
+body[data-bubble-side="right"] #todo-dots {
+  left: auto;
+  right: 8px;
+  justify-content: flex-start;
+}
+
 .bubble {
   display: flex;
   align-items: center;

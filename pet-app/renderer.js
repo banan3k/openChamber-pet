@@ -25,6 +25,10 @@ const ctx = canvas.getContext("2d")
 const bubblesEl = document.getElementById("bubbles")
 const todoDotsEl = document.getElementById("todo-dots")
 
+window.petWindow?.onBubbleSide((side) => {
+  document.body.dataset.bubbleSide = side
+})
+
 const dpr = window.devicePixelRatio || 1
 canvas.width = WIDTH * dpr
 canvas.height = HEIGHT * dpr
