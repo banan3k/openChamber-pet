@@ -19,7 +19,7 @@ An [OpenChamber](https://opencode.ai) / opencode plugin that shows a small, alwa
 ## Requirements
 
 - Node.js (for `npm install` of the Electron dev dependency). If Electron isn't found locally, the plugin falls back to `npx electron`.
-- OpenChamber/opencode with plugin support.
+- OpenChamber with OpenCode 2.0.16 or a compatible V2 plugin API.
 
 ## Install
 
@@ -40,13 +40,13 @@ An [OpenChamber](https://opencode.ai) / opencode plugin that shows a small, alwa
 
    ```jsonc
    {
-     "plugin": [
-       "file:///absolute/path/to/openchamber-pet/index.js"
+     "plugins": [
+       "file:///absolute/path/to/openchamber-pet"
      ]
    }
    ```
 
-   If you already have a `plugin` array, append the entry to it.
+   If you already have a `plugins` array, append the entry to it. Point to the package directory, not `index.js`.
 
 4. Add at least one pet to the `pets/` folder (see below).
 
@@ -86,7 +86,7 @@ The spritesheet follows the Codex V2 atlas layout: a 192x208 grid of cells, one 
 | Toggle visibility | Type `/pet` in the chat |
 | Toggle visibility | Press `Cmd+Alt+P` (`Ctrl+Alt+P` on Windows/Linux) |
 
-The `/pet` command is registered automatically on first load (it writes `~/.config/opencode/command/pet.md`). The shortcut is defined in `pet-app/main.js` as `TOGGLE_SHORTCUT`.
+The `/pet` command is registered directly with OpenCode when the plugin loads and toggles the window without sending a prompt to the model. The shortcut is defined in `pet-app/main.js` as `TOGGLE_SHORTCUT`.
 
 ## Configuration
 
