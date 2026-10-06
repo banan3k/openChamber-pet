@@ -123,3 +123,104 @@ test("live execution completion wins over an older active-session snapshot", asy
   assert.equal(brain.tasks.length, 1)
   assert.equal(brain.tasks[0].status, "done")
 })
+
+test("a V2 question marks its session bubble as waiting", async (t) => {
+  const brain = new PetBrain({ onState() {} })
+  t.after(() => brain.dispose())
+  const ready = Promise.withResolvers()
+  const cleanup = await registerPetIntegration({
+    tool: { transform: async (transform) => transform({ add() {} }) },
+    command: { transform: async (transform) => transform({ add() {} }) },
+    session: { active: async () => ({}) },
+    event: {
+      async *subscribe({ signal }) {
+        yield { type: "session.execution.started", data: { sessionID: "ses_question" } }
+        yield { type: "form.created", data: { form: {
+          id: "frm_question", sessionID: "ses_question", title: "Question",
+          fields: [{ key: "answer", type: "string", title: "Which option?" }],
+        } } }
+        ready.resolve()
+        await once(signal, "abort")
+      },
+    },
+  }, {
+    toggle() {},
+    event: async ({ event }) => brain.handleEvent(event),
+  })
+  t.after(cleanup)
+  await ready.promise
+  assert.equal(brain.tasks[0].status, "waiting")
+  assert.equal(brain.state, "waiting")
+})
+
+for (const resolution of ["form.replied", "form.cancelled"]) {
+  test(`${resolution} resumes only the session that was waiting`, async (t) => {
+    const brain = new PetBrain({ onState() {} })
+    t.after(() => brain.dispose())
+    const ready = Promise.withResolvers()
+    const observations = []
+    const cleanup = await registerPetIntegration({
+      tool: { transform: async (transform) => transform({ add() {} }) },
+      command: { transform: async (transform) => transform({ add() {} }) },
+      session: { active: async () => ({}) },
+      event: {
+        async *subscribe({ signal }) {
+          yield { type: "session.execution.started", data: { sessionID: "ses_other" } }
+          // A question can be the first event observed for this session.
+          yield { type: "form.created", data: { form: {
+            id: "frm_question", sessionID: "ses_question", title: "Question",
+            fields: [{ key: "answer", type: "string" }],
+          } } }
+          observations.push(brain.tasks.find((task) => task.id === "ses_question")?.status)
+          yield { type: "form.created", data: { form: {
+            id: "frm_global", sessionID: "global", title: "Setup",
+            fields: [{ key: "answer", type: "string" }],
+          } } }
+          yield { type: resolution, data: { id: "frm_global", sessionID: "global", answer: {} } }
+          observations.push(brain.tasks.find((task) => task.id === "ses_question")?.status)
+          yield { type: resolution, data: { id: "frm_question", sessionID: "ses_question", answer: { answer: "Yes" } } }
+          observations.push(brain.tasks.find((task) => task.id === "ses_question")?.status)
+          ready.resolve()
+          await once(signal, "abort")
+        },
+      },
+    }, {
+      toggle() {},
+      event: async ({ event }) => brain.handleEvent(event),
+    })
+    t.after(cleanup)
+    await ready.promise
+    assert.deepEqual(observations, ["waiting", "waiting", "working"])
+    assert.equal(brain.tasks.length, 2)
+    assert.equal(brain.tasks.find((task) => task.id === "ses_other").status, "working")
+    assert.equal(brain.state, "working")
+  })
+}
+
+test("a question arriving during startup wins over the active-session snapshot", async (t) => {
+  const brain = new PetBrain({ onState() {} })
+  t.after(() => brain.dispose())
+  const snapshot = Promise.withResolvers()
+  const cleanup = await registerPetIntegration({
+    tool: { transform: async (transform) => transform({ add() {} }) },
+    command: { transform: async (transform) => transform({ add() {} }) },
+    session: { active: () => snapshot.promise },
+    event: {
+      async *subscribe({ signal }) {
+        yield { type: "form.created", data: { form: {
+          id: "frm_question", sessionID: "ses_question", title: "Question",
+          fields: [{ key: "answer", type: "string" }],
+        } } }
+        snapshot.resolve({ ses_question: { type: "running" } })
+        await once(signal, "abort")
+      },
+    },
+  }, {
+    toggle() {},
+    event: async ({ event }) => brain.handleEvent(event),
+  })
+  t.after(cleanup)
+  assert.equal(brain.tasks.length, 1)
+  assert.equal(brain.tasks[0].status, "waiting")
+  assert.equal(brain.state, "waiting")
+})
